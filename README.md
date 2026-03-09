@@ -90,6 +90,39 @@ Contoh payload webhook:
 ```
 
 Jika `SWIFTQR_WEBHOOK_SECRET` diisi, kirim header `x-swiftqr-signature` (HMAC SHA256 body raw).
+Server menerima dua format signature:
+
+- `x-swiftqr-signature: <hex>`
+- `x-swiftqr-signature: sha256=<hex>`
+
+Contoh generate signature (Node/Bun):
+
+```js
+import { createHmac } from 'node:crypto'
+
+const secret = process.env.SWIFTQR_WEBHOOK_SECRET
+const payload = JSON.stringify({
+  eventId: 'evt_001',
+  eventType: 'payment.update',
+  transactionId: 'uuid-payment',
+  status: 'PAID'
+})
+
+const signature = createHmac('sha256', secret).update(payload).digest('hex')
+console.log(`sha256=${signature}`)
+```
+
+Contoh kirim webhook manual:
+
+```bash
+PAYLOAD='{"eventId":"evt_001","eventType":"payment.update","transactionId":"uuid-payment","status":"PAID"}'
+SIGNATURE=$(node -e "const {createHmac}=require('node:crypto'); const s=process.env.SWIFTQR_WEBHOOK_SECRET; const p=process.argv[1]; process.stdout.write('sha256='+createHmac('sha256', s).update(p).digest('hex'));" "$PAYLOAD")
+
+curl -X POST http://localhost:8000/api/webhooks/payment \
+  -H "Content-Type: application/json" \
+  -H "x-swiftqr-signature: $SIGNATURE" \
+  -d "$PAYLOAD"
+```
 
 ## Manual Hit Gobiz Journals
 

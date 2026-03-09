@@ -175,9 +175,18 @@ function verifyWebhookSignature(rawBody: string, signatureHeader: string | undef
   if (!signatureHeader) {
     return false
   }
+
   const expected = createHmac('sha256', secret).update(rawBody).digest('hex')
-  const a = Buffer.from(expected)
-  const b = Buffer.from(signatureHeader)
+  const normalizedHeader = signatureHeader.trim().toLowerCase().startsWith('sha256=')
+    ? signatureHeader.trim().slice(7)
+    : signatureHeader.trim()
+
+  if (!/^[a-fA-F0-9]{64}$/.test(normalizedHeader)) {
+    return false
+  }
+
+  const a = Buffer.from(expected, 'hex')
+  const b = Buffer.from(normalizedHeader, 'hex')
   if (a.length !== b.length) {
     return false
   }
