@@ -1,0 +1,9 @@
+{
+  "name": "qris-dinamis",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "dev": "bunx --bun serve . -l 8000",
+    "start": "bun run dev"
+  }
+}

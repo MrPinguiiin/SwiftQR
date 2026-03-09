@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>404 - Halaman Tidak Ditemukan</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #5B5FEF;
+      --secondary: #FF6B6B;
+      --accent: #00D9A5;
+      --warning: #FFB84D;
+      --bg-main: #F0F4FF;
+      --bg-card: #FFFFFF;
+      --text-primary: #1A1D3D;
+      --text-secondary: #6B7194;
+      --border-color: #E4E8F7;
+      --shadow: 0 20px 60px rgba(91, 95, 239, 0.15);
+    }
+    [data-theme="dark"] {
+      --bg-main: #0F1129;
+      --bg-card: #1A1D3D;
+      --text-primary: #FFFFFF;
+      --text-secondary: #9CA3C7;
+      --border-color: #2D3154;
+      --shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg-main);
+      min-height: 100vh;
+      transition: background 0.3s ease;
+    }
+    .floating-shapes { position: fixed; inset: 0; pointer-events: none; z-index: 0; }
+    .shape { position: absolute; border-radius: 50%; animation: float 20s infinite ease-in-out; }
+    .shape-1 { width: 300px; height: 300px; background: var(--secondary); opacity: 0.08; top: -100px; right: -100px; }
+    .shape-2 { width: 200px; height: 200px; background: var(--primary); opacity: 0.08; bottom: 10%; left: -50px; animation-delay: -5s; }
+    .shape-3 { width: 150px; height: 150px; background: var(--warning); opacity: 0.1; top: 50%; right: 10%; animation-delay: -10s; }
+    @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-20px); } }
+    .theme-toggle { position: fixed; top: 20px; right: 20px; width: 48px; height: 48px; border-radius: 14px; border: 2px solid var(--border-color); background: var(--bg-card); color: var(--text-primary); font-size: 1.1rem; cursor: pointer; z-index: 1000; transition: all 0.3s ease; }
+    .theme-toggle:hover { transform: scale(1.05); border-color: var(--primary); color: var(--primary); }
+    .main-container { min-height: 100vh; display: flex; justify-content: center; align-items: center; padding: 20px; position: relative; z-index: 1; }
+    .error-card { background: var(--bg-card); border-radius: 28px; width: 100%; max-width: 500px; box-shadow: var(--shadow); border: 1px solid var(--border-color); text-align: center; padding: 48px 32px; animation: slideUp 0.5s ease-out; }
+    @keyframes slideUp { from { opacity: 0; transform: translateY(40px); } to { opacity: 1; transform: translateY(0); } }
+    .error-icon { width: 100px; height: 100px; background: #FFE6E6; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 24px; font-size: 3rem; color: var(--secondary); }
+    [data-theme="dark"] .error-icon { background: rgba(255, 107, 107, 0.15); }
+    .error-code { font-size: 5rem; font-weight: 800; color: var(--secondary); line-height: 1; margin-bottom: 8px; }
+    .error-title { font-size: 1.5rem; font-weight: 700; color: var(--text-primary); margin-bottom: 12px; }
+    .error-desc { font-size: 0.95rem; color: var(--text-secondary); margin-bottom: 32px; line-height: 1.6; }
+    .error-desc code { background: var(--bg-main); padding: 4px 10px; border-radius: 8px; font-size: 0.85rem; color: var(--primary); font-weight: 600; }
+    .btn-group { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+    .btn-primary-custom { background: var(--primary); color: #FFF; border: none; padding: 14px 28px; border-radius: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s ease; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; }
+    .btn-primary-custom:hover { background: #4A4ED9; transform: translateY(-2px); color: #FFF; }
+    .btn-secondary-custom { background: var(--bg-main); color: var(--text-primary); border: 2px solid var(--border-color); padding: 14px 28px; border-radius: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s ease; display: inline-flex; align-items: center; gap: 8px; }
+    .btn-secondary-custom:hover { border-color: var(--primary); color: var(--primary); }
+    .chips { display: flex; gap: 8px; justify-content: center; margin-bottom: 24px; flex-wrap: wrap; }
+    .chip { background: var(--bg-main); color: var(--text-secondary); border-radius: 20px; padding: 8px 14px; font-size: 0.8rem; font-weight: 600; border: 1px solid var(--border-color); }
+    @media (max-width: 480px) {
+      .error-card { padding: 36px 24px; border-radius: 24px; }
+      .error-code { font-size: 4rem; }
+      .error-title { font-size: 1.25rem; }
+      .btn-group { flex-direction: column; }
+      .btn-primary-custom, .btn-secondary-custom { width: 100%; justify-content: center; }
+    }
+  </style>
+</head>
+<body>
+  <div class="floating-shapes">
+    <div class="shape shape-1"></div>
+    <div class="shape shape-2"></div>
+    <div class="shape shape-3"></div>
+  </div>
+  <button id="themeToggle" class="theme-toggle"><i class="fas fa-moon"></i></button>
+  <div class="main-container">
+    <div class="error-card">
+      <div class="chips">
+        <span class="chip">💸 Bayar</span>
+        <span class="chip">🪙 QRIS</span>
+        <span class="chip">💳 Transaksi</span>
+      </div>
+      <div class="error-icon"><i class="fas fa-search"></i></div>
+      <div class="error-code">404</div>
+      <h1 class="error-title">Halaman Tidak Ditemukan</h1>
+      <p class="error-desc">Pastikan link pembayaran mengandung parameter <code>?pay=nominal</code> atau kembali ke beranda.</p>
+      <div class="btn-group">
+        <a href="/" class="btn-primary-custom"><i class="fas fa-home"></i> Beranda</a>
+        <button onclick="history.back()" class="btn-secondary-custom"><i class="fas fa-arrow-left"></i> Kembali</button>
+      </div>
+    </div>
+  </div>
+  <script>
+    const toggle = document.getElementById('themeToggle');
+    const theme = localStorage.getItem('theme') || 'light';
+    document.documentElement.setAttribute('data-theme', theme);
+    toggle.querySelector('i').className = theme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
+    toggle.onclick = () => {
+      const t = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', t);
+      localStorage.setItem('theme', t);
+      toggle.querySelector('i').className = t === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
+    };
+  </script>
+</body>
+</html>
