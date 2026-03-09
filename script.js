@@ -7,6 +7,7 @@ let currentGobizMatch = null;
 let countdownInterval = null;
 let paymentStatusInterval = null;
 let gobizMatchInterval = null;
+let postPaymentResetTimeout = null;
 let timeLeft = 900; // 15 minutes
 
 const DEFAULT_QRIS_UTAMA = '';
@@ -136,6 +137,7 @@ function initQrisConfigUI() {
     });
 
     resetButton.addEventListener('click', async function() {
+        clearPostPaymentResetTimeout();
         localStorage.removeItem(QRIS_STORAGE_KEY);
         extractedValue.value = '';
         qrisImageInput.value = '';
@@ -320,6 +322,13 @@ function stopGobizMatchPolling() {
     }
 }
 
+function clearPostPaymentResetTimeout() {
+    if (postPaymentResetTimeout) {
+        clearTimeout(postPaymentResetTimeout);
+        postPaymentResetTimeout = null;
+    }
+}
+
 function hideGobizMatchCard() {
     const card = document.getElementById('gobizMatchCard');
     if (card) {
@@ -345,6 +354,52 @@ function showGobizMatchCard(match) {
     document.getElementById('gobizGopayId').textContent = match.gopayTransactionId || '-';
     card.style.display = 'block';
     console.log('[GobizMatch] match ditemukan:', match);
+}
+
+function resetGeneratedPaymentState() {
+    clearInterval(countdownInterval);
+    stopPaymentStatusPolling();
+    stopGobizMatchPolling();
+
+    timeLeft = 900;
+    currentQRData = null;
+    currentPayAmount = null;
+    currentTransactionId = null;
+    currentPaymentStatus = null;
+    currentPaymentCreatedAt = null;
+
+    const amountInput = document.getElementById('amountInput');
+    if (amountInput) {
+        amountInput.value = '';
+    }
+
+    syncUrlParams({ pay: null });
+    document.getElementById('amountDisplay').textContent = formatCurrency(0);
+    document.getElementById('countdown').textContent = '15:00';
+
+    const timerSection = document.getElementById('timerSection');
+    timerSection.style.background = '';
+    timerSection.style.color = '';
+
+    document.getElementById('merchantDisplay').style.display = 'none';
+    document.getElementById('actionButtons').style.display = 'none';
+    document.getElementById('qrContainer').innerHTML = `
+        <div style="text-align: center;">
+            <i class="fas fa-receipt" style="font-size: 2.4rem; color: var(--accent); margin-bottom: 12px;"></i>
+            <p style="color: var(--text-secondary); margin-bottom: 6px;">Pembayaran selesai terdeteksi</p>
+            <small style="color: var(--text-muted);">Masukkan nominal baru untuk membuat QRIS berikutnya.</small>
+        </div>
+    `;
+
+    setPaymentStatus('pending', 'Status pembayaran: Siap untuk transaksi baru');
+}
+
+function schedulePostPaymentReset() {
+    clearPostPaymentResetTimeout();
+    postPaymentResetTimeout = setTimeout(() => {
+        resetGeneratedPaymentState();
+        showMessage('Transaksi selesai. Nominal dan QRIS dinamis sudah direset.', 'success');
+    }, 2500);
 }
 
 function copyGobizReference() {
@@ -402,6 +457,7 @@ function startGobizMatchPolling(amount, createdAtISO) {
                 setPaymentStatus('paid', 'Status pembayaran: Match ditemukan di Gobiz');
                 currentPaymentStatus = 'PAID';
                 stopGobizMatchPolling();
+                schedulePostPaymentReset();
             } else {
                 console.log('[GobizMatch] belum ada match');
             }
@@ -412,6 +468,7 @@ function startGobizMatchPolling(amount, createdAtISO) {
 }
 
 function renderAwaitingQrisState() {
+    clearPostPaymentResetTimeout();
     document.getElementById('qrContainer').innerHTML = `
         <div style="text-align: center;">
             <i class="fas fa-image" style="font-size: 3rem; color: var(--primary); margin-bottom: 16px;"></i>
@@ -426,6 +483,7 @@ function renderAwaitingQrisState() {
 }
 
 async function restartPaymentFlow(qrisUtama, amount) {
+    clearPostPaymentResetTimeout();
     stopGobizMatchPolling();
     stopPaymentStatusPolling();
     clearInterval(countdownInterval);
@@ -459,6 +517,7 @@ async function restartPaymentFlow(qrisUtama, amount) {
 }
 
 function renderInvalidQrisState() {
+    clearPostPaymentResetTimeout();
     document.getElementById('qrContainer').innerHTML = `
         <div style="text-align: center;">
             <i class="fas fa-triangle-exclamation" style="font-size: 3rem; color: var(--danger); margin-bottom: 16px;"></i>
@@ -472,6 +531,7 @@ function renderInvalidQrisState() {
 }
 
 function renderEmptyAmountState() {
+    clearPostPaymentResetTimeout();
     document.getElementById('amountDisplay').textContent = formatCurrency(0);
     document.getElementById('qrContainer').innerHTML = `
         <div style="text-align: center;">

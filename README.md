@@ -75,6 +75,8 @@ Contoh:
 - `POST /api/gobiz/journals/match` cari 1 data transaksi yang match nominal + rentang waktu
 - `GET /api/health` health check
 
+Saat match ditemukan, UI akan menampilkan kartu "Pembayaran Terdeteksi" lalu otomatis mereset nominal dan QR dinamis untuk transaksi berikutnya (payload QRIS statis tetap tersimpan).
+
 Contoh payload webhook:
 
 ```json

@@ -157,7 +157,7 @@ body {
   background: var(--bg-card);
   border-radius: 28px;
   width: 100%;
-  max-width: 440px;
+  max-width: 560px;
   box-shadow: var(--shadow);
   overflow: hidden;
   animation: slideUp 0.5s ease-out;
@@ -511,24 +511,29 @@ body {
 
 /* Status Section */
 .status-section {
-  display: flex;
-  justify-content: center;
-  gap: 24px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
   padding: 16px 24px;
 }
 
 .status-item {
   display: flex;
   align-items: center;
-  gap: 6px;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 12px;
+  background: var(--bg-main);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
   font-size: 0.8rem;
   color: var(--text-secondary);
-  font-weight: 500;
+  font-weight: 600;
 }
 
 .status-item i {
-  color: var(--accent);
-  font-size: 0.9rem;
+  color: #00A67E;
+  font-size: 0.8rem;
 }
 
 /* Divider */
@@ -844,15 +849,13 @@ body {
   }
   
   .status-section {
-    gap: 16px;
+    gap: 8px;
+    padding: 14px 16px;
   }
-  
-  .status-item span {
-    display: none;
-  }
-  
-  .status-item i {
-    font-size: 1.2rem;
+
+  .status-item {
+    padding: 8px;
+    font-size: 0.72rem;
   }
   
   .shape-1 { width: 200px; height: 200px; }
@@ -910,7 +913,19 @@ body {
 /* Tablet and Desktop */
 @media (min-width: 768px) {
   .payment-card {
-    max-width: 460px;
+    max-width: 620px;
+  }
+
+  .steps {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .gobiz-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .gobiz-grid > div:last-child {
+    grid-column: span 3;
   }
   
   .theme-toggle {
