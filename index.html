@@ -54,6 +54,8 @@
         <span id="countdown" class="countdown">15:00</span>
       </div>
 
+      <div id="paymentStatus" class="payment-status pending">Status pembayaran: Menunggu upload QRIS</div>
+
       <!-- Message Container -->
       <div id="messageContainer"></div>
 
@@ -71,6 +73,21 @@
       <div id="merchantDisplay" class="merchant-info" style="display:none;">
         <i class="fas fa-store"></i>
         <span id="displayMerchantName"></span>
+      </div>
+
+      <div id="gobizMatchCard" class="gobiz-match" style="display:none;">
+        <h6><i class="fas fa-circle-check"></i> Pembayaran Terdeteksi</h6>
+        <div class="gobiz-grid">
+          <div><span>Order ID</span><strong id="gobizOrderId">-</strong></div>
+          <div><span>Nominal</span><strong id="gobizAmount">-</strong></div>
+          <div><span>Status</span><strong id="gobizStatus">-</strong></div>
+          <div><span>Waktu Settlement</span><strong id="gobizSettlementTime">-</strong></div>
+          <div><span>GoPay Transaction ID</span><strong id="gobizGopayId">-</strong></div>
+        </div>
+        <button id="copyGobizRefButton" class="gobiz-copy-btn" onclick="copyGobizReference()">
+          <i class="fas fa-copy"></i>
+          <span>Copy Reference</span>
+        </button>
       </div>
 
       <!-- Action Buttons -->

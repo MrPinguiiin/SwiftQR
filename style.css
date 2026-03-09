@@ -300,6 +300,32 @@ body {
   font-variant-numeric: tabular-nums;
 }
 
+.payment-status {
+  margin: 10px 24px 0;
+  border-radius: 12px;
+  padding: 10px 12px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  text-align: center;
+  border: 1px solid var(--border-color);
+}
+
+.payment-status.pending {
+  background: var(--bg-main);
+  color: var(--text-secondary);
+}
+
+.payment-status.paid {
+  background: #E6FFF6;
+  color: #00A67E;
+}
+
+.payment-status.expired,
+.payment-status.failed {
+  background: #FFE6E6;
+  color: #D63031;
+}
+
 /* QR Section */
 .qr-section {
   padding: 24px;
@@ -363,6 +389,67 @@ body {
 [data-theme="dark"] .merchant-info {
   background: rgba(0, 217, 165, 0.15);
   color: var(--accent);
+}
+
+.gobiz-match {
+  margin: 10px 24px 0;
+  border: 1px solid rgba(0, 166, 126, 0.25);
+  border-radius: 14px;
+  padding: 12px;
+  background: #F2FFF9;
+}
+
+.gobiz-match h6 {
+  margin: 0 0 10px;
+  color: #008C69;
+  font-size: 0.86rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.gobiz-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.gobiz-grid span {
+  display: block;
+  color: var(--text-secondary);
+  font-size: 0.72rem;
+  margin-bottom: 4px;
+}
+
+.gobiz-grid strong {
+  display: block;
+  color: var(--text-primary);
+  font-size: 0.8rem;
+  font-weight: 700;
+  word-break: break-word;
+}
+
+.gobiz-copy-btn {
+  margin-top: 12px;
+  width: 100%;
+  border: none;
+  border-radius: 10px;
+  padding: 10px 12px;
+  background: #00A67E;
+  color: #FFFFFF;
+  font-size: 0.8rem;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.gobiz-copy-btn:hover {
+  background: #008C69;
 }
 
 /* Action Buttons */
@@ -796,6 +883,18 @@ body {
   .qris-config {
     margin: 8px 16px 20px;
     padding: 14px;
+  }
+
+  .gobiz-match {
+    margin: 10px 16px 0;
+  }
+
+  .gobiz-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .payment-status {
+    margin: 10px 16px 0;
   }
 
   .qris-action-row {

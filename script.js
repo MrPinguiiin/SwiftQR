@@ -1,6 +1,12 @@
 let currentQRData = null;
 let currentPayAmount = null;
+let currentTransactionId = null;
+let currentPaymentStatus = null;
+let currentPaymentCreatedAt = null;
+let currentGobizMatch = null;
 let countdownInterval = null;
+let paymentStatusInterval = null;
+let gobizMatchInterval = null;
 let timeLeft = 900; // 15 minutes
 
 const DEFAULT_QRIS_UTAMA = '';
@@ -140,13 +146,20 @@ function initQrisConfigUI() {
         showMessage('Payload direset. Silakan upload ulang gambar QRIS.', 'success');
 
         clearInterval(countdownInterval);
+        stopPaymentStatusPolling();
+        stopGobizMatchPolling();
         timeLeft = 900;
         currentQRData = null;
+        currentTransactionId = null;
+        currentPaymentStatus = null;
+        currentPaymentCreatedAt = null;
+        hideGobizMatchCard();
 
         renderAwaitingQrisState();
         document.getElementById('amountDisplay').textContent = formatCurrency(currentPayAmount || 0);
         document.getElementById('actionButtons').style.display = 'none';
         document.getElementById('merchantDisplay').style.display = 'none';
+        setPaymentStatus('pending', 'Status pembayaran: Menunggu upload QRIS');
 
         if (!currentPayAmount) {
             return;
@@ -225,6 +238,179 @@ function updateQrisValidationStatus(validation) {
     status.textContent = `Status payload: tidak valid (${validation.error})`;
 }
 
+function setPaymentStatus(status, text) {
+    const statusEl = document.getElementById('paymentStatus');
+    if (!statusEl) {
+        return;
+    }
+
+    statusEl.classList.remove('pending', 'paid', 'expired', 'failed');
+    const normalized = String(status || '').toLowerCase();
+    if (['pending', 'paid', 'expired', 'failed'].includes(normalized)) {
+        statusEl.classList.add(normalized);
+    }
+    statusEl.textContent = text;
+}
+
+function stopPaymentStatusPolling() {
+    if (paymentStatusInterval) {
+        clearInterval(paymentStatusInterval);
+        paymentStatusInterval = null;
+    }
+}
+
+function handlePaymentStatus(status) {
+    const nextStatus = String(status || '').toUpperCase();
+    if (nextStatus === currentPaymentStatus) {
+        return;
+    }
+
+    currentPaymentStatus = nextStatus;
+
+    if (nextStatus === 'PAID') {
+        setPaymentStatus('paid', 'Status pembayaran: Berhasil dibayar');
+        clearInterval(countdownInterval);
+        stopPaymentStatusPolling();
+        stopGobizMatchPolling();
+        showMessage('Pembayaran berhasil diterima.', 'success');
+        return;
+    }
+
+    if (nextStatus === 'EXPIRED') {
+        setPaymentStatus('expired', 'Status pembayaran: Kedaluwarsa');
+        clearInterval(countdownInterval);
+        stopPaymentStatusPolling();
+        stopGobizMatchPolling();
+        showMessage('Pembayaran kedaluwarsa. Silakan buat QR baru.', 'warning');
+        return;
+    }
+
+    if (nextStatus === 'FAILED') {
+        setPaymentStatus('failed', 'Status pembayaran: Gagal');
+        clearInterval(countdownInterval);
+        stopPaymentStatusPolling();
+        stopGobizMatchPolling();
+        showMessage('Pembayaran gagal. Silakan coba lagi.', 'danger');
+        return;
+    }
+
+    setPaymentStatus('pending', 'Status pembayaran: Menunggu pembayaran');
+}
+
+function startPaymentStatusPolling(transactionId) {
+    stopPaymentStatusPolling();
+    if (!transactionId) {
+        return;
+    }
+
+    paymentStatusInterval = setInterval(async function() {
+        try {
+            const statusData = await fetchPaymentStatus(transactionId);
+            handlePaymentStatus(statusData.status);
+        } catch {
+            // ignore polling errors
+        }
+    }, 4000);
+}
+
+function stopGobizMatchPolling() {
+    if (gobizMatchInterval) {
+        clearInterval(gobizMatchInterval);
+        gobizMatchInterval = null;
+    }
+}
+
+function hideGobizMatchCard() {
+    const card = document.getElementById('gobizMatchCard');
+    if (card) {
+        card.style.display = 'none';
+    }
+    currentGobizMatch = null;
+}
+
+function showGobizMatchCard(match) {
+    const card = document.getElementById('gobizMatchCard');
+    if (!card || !match) {
+        return;
+    }
+
+    currentGobizMatch = match;
+
+    document.getElementById('gobizOrderId').textContent = match.orderId || '-';
+    document.getElementById('gobizAmount').textContent = formatCurrency(Number(match.amount || 0));
+    document.getElementById('gobizStatus').textContent = String(match.status || '-').toUpperCase();
+    document.getElementById('gobizSettlementTime').textContent = match.settlementTime
+        ? new Date(match.settlementTime).toLocaleString('id-ID')
+        : '-';
+    document.getElementById('gobizGopayId').textContent = match.gopayTransactionId || '-';
+    card.style.display = 'block';
+    console.log('[GobizMatch] match ditemukan:', match);
+}
+
+function copyGobizReference() {
+    const value =
+        (currentGobizMatch && (currentGobizMatch.gopayTransactionId || currentGobizMatch.referenceId || currentGobizMatch.orderId)) || '';
+
+    if (!value) {
+        showMessage('Reference Gobiz belum tersedia.', 'warning');
+        return;
+    }
+
+    navigator.clipboard.writeText(value)
+        .then(() => showMessage('Reference Gobiz berhasil disalin.', 'success'))
+        .catch(() => showMessage('Gagal menyalin reference Gobiz.', 'danger'));
+}
+
+async function fetchGobizMatch(amount, fromTimeISO, toTimeISO) {
+    console.log('[GobizMatch] request', { amount, fromTimeISO, toTimeISO });
+    const response = await fetch('/api/gobiz/journals/match', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            amount,
+            fromTimeISO,
+            toTimeISO,
+            size: 20
+        })
+    });
+
+    const data = await response.json();
+    if (!response.ok) {
+        throw new Error(data.error || 'Gagal cek match Gobiz');
+    }
+    console.log('[GobizMatch] response', data);
+    return data;
+}
+
+function startGobizMatchPolling(amount, createdAtISO) {
+    stopGobizMatchPolling();
+    if (!amount || !createdAtISO) {
+        return;
+    }
+
+    const fromTimeISO = new Date(new Date(createdAtISO).getTime() - (2 * 60 * 1000)).toISOString();
+    console.log('[GobizMatch] polling dimulai', { amount, createdAtISO, fromTimeISO });
+
+    gobizMatchInterval = setInterval(async function() {
+        try {
+            const toTimeISO = new Date().toISOString();
+            const matchData = await fetchGobizMatch(amount, fromTimeISO, toTimeISO);
+            if (matchData.found && matchData.match) {
+                showGobizMatchCard(matchData.match);
+                setPaymentStatus('paid', 'Status pembayaran: Match ditemukan di Gobiz');
+                currentPaymentStatus = 'PAID';
+                stopGobizMatchPolling();
+            } else {
+                console.log('[GobizMatch] belum ada match');
+            }
+        } catch (error) {
+            console.error('[GobizMatch] error polling', error);
+        }
+    }, 5000);
+}
+
 function renderAwaitingQrisState() {
     document.getElementById('qrContainer').innerHTML = `
         <div style="text-align: center;">
@@ -235,13 +421,21 @@ function renderAwaitingQrisState() {
     `;
     document.getElementById('actionButtons').style.display = 'none';
     document.getElementById('merchantDisplay').style.display = 'none';
+    hideGobizMatchCard();
+    setPaymentStatus('pending', 'Status pembayaran: Menunggu upload QRIS');
 }
 
 async function restartPaymentFlow(qrisUtama, amount) {
+    stopGobizMatchPolling();
+    stopPaymentStatusPolling();
     clearInterval(countdownInterval);
     timeLeft = 900;
     currentQRData = null;
     currentPayAmount = amount;
+    currentTransactionId = null;
+    currentPaymentStatus = null;
+    currentPaymentCreatedAt = null;
+    hideGobizMatchCard();
 
     const timerSection = document.getElementById('timerSection');
     timerSection.style.background = '';
@@ -255,6 +449,8 @@ async function restartPaymentFlow(qrisUtama, amount) {
             <p>Generating QR Code...</p>
         </div>
     `;
+
+    setPaymentStatus('pending', 'Status pembayaran: Menunggu pembayaran');
 
     const generated = await generateQRIS(qrisUtama, amount);
     if (generated) {
@@ -272,6 +468,7 @@ function renderInvalidQrisState() {
     `;
     document.getElementById('actionButtons').style.display = 'none';
     document.getElementById('merchantDisplay').style.display = 'none';
+    hideGobizMatchCard();
 }
 
 function renderEmptyAmountState() {
@@ -285,6 +482,8 @@ function renderEmptyAmountState() {
     `;
     document.getElementById('actionButtons').style.display = 'none';
     document.getElementById('merchantDisplay').style.display = 'none';
+    hideGobizMatchCard();
+    setPaymentStatus('pending', 'Status pembayaran: Isi nominal untuk mulai');
 }
 
 function resolveQrisUtama() {
@@ -428,6 +627,9 @@ function startCountdown() {
 
         if (timeLeft <= 0) {
             clearInterval(countdownInterval);
+            stopPaymentStatusPolling();
+            stopGobizMatchPolling();
+            setPaymentStatus('expired', 'Status pembayaran: Kedaluwarsa');
             showMessage('QR Code telah kedaluwarsa. Silakan masukkan ulang nominal atau refresh halaman.', 'warning');
             document.getElementById('qrContainer').innerHTML = `
                 <div style="text-align: center;">
@@ -493,14 +695,32 @@ function showMessage(text, type = 'danger') {
     }, 4000);
 }
 
-// QRIS API
-async function qris(id, harga) {
-    try {
-        const response = await fetch(`https://api-mininxd.vercel.app/qris?qris=${encodeURIComponent(id)}&nominal=${harga}`);
-        return await response.json();
-    } catch (e) {
-        return { error: e.message };
+async function createPayment(qrisPayload, amount) {
+    const response = await fetch('/api/payments/create', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            amount,
+            qrisPayload
+        })
+    });
+
+    const data = await response.json();
+    if (!response.ok) {
+        throw new Error(data.error || 'Gagal membuat pembayaran');
     }
+    return data;
+}
+
+async function fetchPaymentStatus(transactionId) {
+    const response = await fetch(`/api/payments/${encodeURIComponent(transactionId)}/status`);
+    const data = await response.json();
+    if (!response.ok) {
+        throw new Error(data.error || 'Gagal cek status pembayaran');
+    }
+    return data;
 }
 
 // Generate QRIS
@@ -508,14 +728,18 @@ async function generateQRIS(qrisUtama, amount) {
     try {
         document.getElementById('amountDisplay').textContent = formatCurrency(amount);
 
-        const data = await qris(qrisUtama, amount);
-
-        if (!data || (!data.QR && !data.qr)) {
-            throw new Error('Gagal generate QRIS dari API');
+        const data = await createPayment(qrisUtama, amount);
+        console.log('[Payment] create response', data);
+        const qrString = data.qrString;
+        if (!qrString) {
+            throw new Error('QR string tidak tersedia');
         }
 
-        const qrString = data.QR || data.qr || data.qris;
+        currentTransactionId = data.transactionId || null;
+        currentPaymentStatus = data.status || 'PENDING';
+        currentPaymentCreatedAt = data.createdAt || new Date().toISOString();
         currentQRData = qrString;
+        handlePaymentStatus(currentPaymentStatus);
 
         if (data.merchant) {
             document.getElementById('displayMerchantName').textContent = data.merchant;
@@ -541,6 +765,8 @@ async function generateQRIS(qrisUtama, amount) {
         });
 
         document.getElementById('actionButtons').style.display = 'grid';
+        startPaymentStatusPolling(currentTransactionId);
+        startGobizMatchPolling(amount, currentPaymentCreatedAt);
         return true;
     } catch (error) {
         document.getElementById('qrContainer').innerHTML = `
